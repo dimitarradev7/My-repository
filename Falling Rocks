@@ -1,0 +1,200 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+struct Object
+{
+    public int x;
+    public int y;
+    public char simbol;
+    public ConsoleColor color;
+}
+
+class FallingRocks
+{
+
+    static void PrintOnPosition(int x, int y, char simbol, ConsoleColor color)
+    {
+        Console.SetCursorPosition(x, y);
+        Console.ForegroundColor = color;
+        Console.Write(simbol);
+    }
+    static void PrintStringOnPosition(int x, int y, string str,
+        ConsoleColor color = ConsoleColor.Gray)
+    {
+        Console.SetCursorPosition(x, y);
+        Console.ForegroundColor = color;
+        Console.Write(str);
+    }
+    static void Main()
+    {
+        char[] symbolList = { '^', '@', '*', '&', '+', '%', '$', '#', '!', '.', ';' };
+        Console.BufferHeight = Console.WindowHeight = 20;
+        Console.BufferWidth = Console.WindowWidth = 50;
+
+        int playFieldSizeWidth = 30;
+        int playFieldSizeHeight = 15;
+
+        int livesCount = 4;
+
+
+
+        ulong points = 0;
+
+        ConsoleColor[] colorList = { ConsoleColor.Cyan, ConsoleColor.Cyan, ConsoleColor.DarkYellow, ConsoleColor.Magenta };
+
+        Object dwarfFirstPart = new Object();
+        Object dwarfSecoundPart = new Object();
+        Object dwarfThirdPart = new Object();
+        CreateDwarf(out dwarfFirstPart, out dwarfSecoundPart, out dwarfThirdPart);
+
+        Random randomGenerator = new Random();
+        List<Object> objects = new List<Object>();
+
+        while (true)
+        {
+            bool hitted = false;
+
+            int chance = randomGenerator.Next(0, 3);
+            int randomColor = randomGenerator.Next(0, 4);
+            int randomLen = randomGenerator.Next(0, 4);
+
+            for (int i = 0; i < chance; i++)
+            {
+                int chooseSymbol = randomGenerator.Next(0, symbolList.Length);
+                int randomPosition = randomGenerator.Next(1, playFieldSizeWidth - 3);
+                for (int j = 0; j < randomLen; j++)
+                {
+                    Object newObject = new Object();
+                    newObject.x = randomPosition + j;
+                    newObject.y = Console.WindowHeight - playFieldSizeHeight;
+                    newObject.simbol = symbolList[chooseSymbol];
+                    newObject.color = colorList[randomColor];
+
+                    bool isPositionFree = true;
+
+                    for (int k = 0; k < objects.Count && isPositionFree; k++)
+                    {
+                        isPositionFree = (objects[k].x == newObject.x && objects[k].y == newObject.y) ? false : true;
+                    }
+
+
+                    if (isPositionFree)
+                    {
+                        objects.Add(newObject);
+                    }
+
+                }
+            }
+
+            while (Console.KeyAvailable)
+            {
+                ConsoleKeyInfo pressedKey = Console.ReadKey(true);
+
+                if (pressedKey.Key == ConsoleKey.LeftArrow && dwarfFirstPart.x > 1)
+                {
+                    dwarfFirstPart.x += -1;
+                    dwarfSecoundPart.x += -1;
+                    dwarfThirdPart.x += -1;
+                }
+                if (pressedKey.Key == ConsoleKey.RightArrow && dwarfThirdPart.x < playFieldSizeWidth - 2)
+                {
+                    dwarfFirstPart.x += 1;
+                    dwarfSecoundPart.x += 1;
+                    dwarfThirdPart.x += 1;
+                }
+
+            }
+            List<Object> newList = new List<Object>();
+            for (int i = 0; i < objects.Count; i++)
+            {
+                Object newRock = new Object();
+                newRock.x = objects[i].x;
+                newRock.y = objects[i].y + 1;
+                newRock.simbol = objects[i].simbol;
+                newRock.color = objects[i].color;
+
+                if (newRock.y == dwarfFirstPart.y && newRock.x >= dwarfFirstPart.x && newRock.x <= dwarfThirdPart.x)
+                {
+                    hitted = true;
+                    livesCount--;
+                    objects.Clear();
+
+                    if (livesCount <= 0)
+                    {
+                        PrintStringOnPosition(17, 10, "GAME OVER!!!", ConsoleColor.Red);
+                        PrintStringOnPosition(17, 12, "Press [enter] to exit", ConsoleColor.Red);
+                        Console.ReadLine();
+                        Environment.Exit(0);
+                    }
+                }
+
+                if (newRock.y < Console.WindowHeight)
+                {
+                    newList.Add(newRock);
+                }
+            }
+            objects = newList;
+            Console.Clear();
+
+
+            for (int i = Console.WindowHeight - 1; i > Console.WindowHeight - playFieldSizeHeight; i--)
+            {
+                PrintOnPosition(0, i, '|', ConsoleColor.Yellow);
+                PrintOnPosition(playFieldSizeWidth - 1, i, '|', ConsoleColor.Yellow);
+            }
+            for (int i = 0; i < playFieldSizeWidth; i++)
+            {
+                //PrintOnPosition(0, i, "|", ConsoleColor.Yellow);
+                PrintOnPosition(i, Console.WindowHeight - playFieldSizeHeight, '=', ConsoleColor.Yellow);
+            }
+            foreach (Object rock in objects)
+            {
+                PrintOnPosition(rock.x, rock.y, rock.simbol, rock.color);
+            }
+
+            if (hitted)
+            {
+
+                PrintOnPosition(dwarfFirstPart.x, dwarfFirstPart.y, 'X', ConsoleColor.Red);
+                PrintOnPosition(dwarfSecoundPart.x, dwarfSecoundPart.y, 'X', ConsoleColor.Red);
+                PrintOnPosition(dwarfThirdPart.x, dwarfThirdPart.y, 'X', ConsoleColor.Red);
+                Console.Read();
+            }
+            else
+            {
+                PrintOnPosition(dwarfFirstPart.x, dwarfFirstPart.y, dwarfFirstPart.simbol, dwarfFirstPart.color);
+                PrintOnPosition(dwarfSecoundPart.x, dwarfSecoundPart.y, dwarfSecoundPart.simbol, dwarfSecoundPart.color);
+                PrintOnPosition(dwarfThirdPart.x, dwarfThirdPart.y, dwarfThirdPart.simbol, dwarfThirdPart.color);
+            }
+            points++;
+            PrintStringOnPosition(32, 8, "Points: " + points, ConsoleColor.White);
+            PrintStringOnPosition(32, 9, "Lives: " + livesCount, ConsoleColor.White);
+
+            Thread.Sleep(150);
+        }
+    }
+
+    private static void CreateDwarf(out Object dwarfFirstPart, out Object dwarfSecoundPart, out Object dwarfThirdPart)
+    {
+        dwarfFirstPart.x = 2;
+        dwarfFirstPart.y = Console.WindowHeight - 1;
+        dwarfFirstPart.simbol = '(';
+        dwarfFirstPart.color = ConsoleColor.White;
+
+        dwarfSecoundPart.x = 3;
+        dwarfSecoundPart.y = Console.WindowHeight - 1;
+        dwarfSecoundPart.simbol = '0';
+        dwarfSecoundPart.color = ConsoleColor.White;
+
+        dwarfThirdPart.x = 4;
+        dwarfThirdPart.y = Console.WindowHeight - 1;
+        dwarfThirdPart.simbol = ')';
+        dwarfThirdPart.color = ConsoleColor.White;
+    }
+
+    public static object List { get; set; }
+}
